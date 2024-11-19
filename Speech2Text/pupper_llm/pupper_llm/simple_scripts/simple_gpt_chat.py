@@ -3,7 +3,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 from openai import OpenAI
 
-client = OpenAI(api_key='TODO')
+client = OpenAI(api_key='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')
 
 class GPT4ConversationNode(Node):
     def __init__(self):
@@ -26,35 +26,36 @@ class GPT4ConversationNode(Node):
 
         self.get_logger().info('GPT-4 conversation node started and waiting for queries...')
 
-
-    
-    # TODO: Implement the query_callback method
-    # msg is a String message object that contains the user query. You can extract the query using msg.data
     def query_callback(self, msg):
-        pass
-        # Extract the user query from the message using the data attribute of message
-        
-        # Call GPT-4 API to get the response. Use the get_gpt4_response method and pass in the query
+        # Extract the user query from the message
+        query = msg.data
 
-        # Publish the response (as the data to a String message) using self.publisher_ and its publish method, 
+        # Call GPT-4 API to get the response
+        response = self.get_gpt4_response(query)
 
-        # Publish the response to the ROS2 topic
-        
-        # DEBUG LOGGERS: Uncomment the following line to print the query and response (you may have to change the variable names)
-        
-        # self.get_logger().info(f"Received user query: {user_query}") 
-        # self.get_logger().info(f"Published GPT-4 response: {response}")
+        # Create a new String message for the response
+        response_msg = String()
+        response_msg.data = response
+
+        # Publish the response
+        self.publisher_.publish(response_msg)
+
+        # DEBUG LOGGERS
+        self.get_logger().info(f"Received user query: {query}") 
+        self.get_logger().info(f"Published GPT-4 response: {response}")
 
     def get_gpt4_response(self, query):
         try:
-            # Making the API call to GPT-4o using OpenAI's Python client
-            prompt = "TODO"
-            response = client.chat.completions.create(model="gpt-4",  # Model identifier, assuming GPT-4 is used
-            messages=[
-                {"role": "system", "content": prompt},
-                {"role": "user", "content": query}
-            ],
-            max_tokens=150)  # Adjust token limit based on your requirement)
+            # Making the API call to GPT-4 using OpenAI's Python client
+            prompt = "You are a helpful assistant. Please provide a concise response to the following query:"
+            response = client.chat.completions.create(
+                model="gpt-4",  # Model identifier, assuming GPT-4 is used
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": query}
+                ],
+                max_tokens=150  # Adjust token limit based on your requirement
+            )
 
             # Extract the assistant's reply from the response
             gpt4_response = response.choices[0].message.content

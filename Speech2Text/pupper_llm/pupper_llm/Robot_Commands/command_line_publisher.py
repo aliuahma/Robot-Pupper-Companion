@@ -14,14 +14,14 @@ class CommandLinePublisher(Node):
         )
         self.get_logger().info('Command Line Publisher Node has started.')
 
-    # TODO: Implement the publish_message method
-    # message is a string that contains the user query. You can publish it using the publisher_ and its publish method
     def publish_message(self, message):
-        pass
         # Create a String message and publish it with the message as the data
+        msg = String()
+        msg.data = message
+        self.publisher_.publish(msg)
 
-        # DEBUG LOGGER: Uncomment the following line to print the message (you may have to change the variable name)
-        # self.get_logger().info(f"Published message: {message}")
+        # DEBUG LOGGER: Print the message
+        self.get_logger().info(f"Published message: {message}")
 
 
 def main(args=None):
