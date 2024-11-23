@@ -9,7 +9,7 @@ import io
 import wave
 import whisper as wh
 
-client = OpenAI(api_key='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')
+client = OpenAI(api_key='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')
 
 class CommandLinePublisher(Node):
     def __init__(self):
