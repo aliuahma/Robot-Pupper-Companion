@@ -5,17 +5,18 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 import math
 from vision_msgs.msg import Detection2DArray
+IMAGE_WIDTH = 1400
 # import simpleaudio as sa
 
-class UtilFunctions:
-    def start():
-        rclpy.init()
+class UtilFunctions():
+    # def start():
+    #     rclpy.init()
 
     def __init__(self, coco_file='coco.txt'):
-        # rclpy.init()
-        super().__init__('karel_util_node')
-        self.publisher = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.subscription = self.create_subscription(
+        rclpy.init()
+        self.node = Node('karel_util_node')
+        self.publisher = self.node.create_publisher(Twist, 'cmd_vel', 10)
+        self.subscription = self.node.create_subscription(
             Detection2DArray,
             '/detections',
             self.detection_callback,
@@ -25,7 +26,9 @@ class UtilFunctions:
         self.target_class_id = None
 
         # Load COCO classes
-        self.coco_classes = self.load_coco_classes(coco_file)
+        self.labels_path = 'coco.txt'
+        with open(self.labels_path, "r", encoding = "utf-8") as f:
+            self.class_names = f.read().splitlines()
 
     def move(self, velocity = 1.0):
         move_cmd = Twist()
@@ -84,11 +87,11 @@ class UtilFunctions:
             angular_velocity (float): Angular velocity for turning.
             timeout (float): Time limit to find and face the object.
         """
-        if class_name not in self.coco_classes:
+        if class_name not in self.class_names:
             self.get_logger().error(f"Class '{class_name}' not found in COCO dataset.")
             return
 
-        class_id = self.coco_classes[class_name]
+        class_id = self.class_names[class_name]
         self.get_logger().info(f"Turning to face object with class_name='{class_name}', class_id={class_id}...")
 
         start_time = time.time()
@@ -135,6 +138,24 @@ class UtilFunctions:
             rate.sleep()
 
    
+    def detection_callback(self, msg):
+        """
+        Determine which of the HAILO detections is the most central detected object
+        """
+        self.current_time = msg.header.stamp.sec
+        self.most_centered = 1
+        for i in msg.detections:
+            x = i.bbox.center.position.x
+            y = i.bbox.center.position.y
+
+            x = (x - (IMAGE_WIDTH/2)) / (IMAGE_WIDTH/2)
+            
+            if abs(x) < abs(self.most_centered):
+                    self.most_centered = x 
+                    self.most_recent_detection = msg.header.stamp.sec
+                    #self.get_logger().info(f'x: {self.most_centered}')
+                    #self.get_logger().info(f'time: {self.most_recent_detection}')
+                # self.get_logger().info(x)
 
 #     def bark(self):
 #         self.node.get_logger().info('Bark...')
@@ -162,3 +183,11 @@ class UtilFunctions:
         self.node.get_logger().info('Tearing down...')
         self.node.destroy_node()
         rclpy.shutdown()
+
+
+util = UtilFunctions()
+util.move()
+util.move()
+util.move()
+util.move()
+util.move()
